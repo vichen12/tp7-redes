@@ -12,11 +12,7 @@ Este proyecto contiene 4 aplicaciones de red:
 
 
 💻 Instalación Rápida
-1. Instalar Node.js
 
-Ir a: https://nodejs.org/
-Descargar versión LTS
-Instalar y listo
 
 2. Instalar dependencias (solo primera vez)
 bashcd 1-cliente-correo
@@ -32,13 +28,15 @@ cd ../4-cliente-ftp
 npm install
 3. Ejecutar aplicaciones
 Abrir 4 terminales y en cada una:
-bash# Terminal 1
+bash#
+# Terminal 1
 cd 1-cliente-correo
 npm start
 
 # Terminal 2
 cd 2-servidor-web
 npm start
+en esta no es necesario hacer nada pero si tenerla levantada
 
 # Terminal 3
 cd 3-chat-mensajeria
