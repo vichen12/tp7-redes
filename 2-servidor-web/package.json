@@ -1,0 +1,17 @@
+{
+  "name": "servidor-web",
+  "version": "1.0.0",
+  "description": "Servidor Web HTTP con seguridad y logging",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-basic-auth": "^1.2.1",
+    "body-parser": "^1.20.2",
+    "fs-extra": "^11.1.1",
+    "morgan": "^1.10.0",
+    "helmet": "^7.1.0"
+  }
+}

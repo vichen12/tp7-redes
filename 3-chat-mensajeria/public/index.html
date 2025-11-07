@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Mensajería</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Login Screen */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 400px;
+        }
+        .login-box h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .toggle-form {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+        }
+        .toggle-form a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        /* Chat Screen */
+        #chat-screen {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+        .chat-header {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .chat-header h1 {
+            color: #667eea;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-logout {
+            padding: 8px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .chat-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar-header {
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .channel-item, .user-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        .channel-item:hover, .user-item:hover {
+            background: #f8f9fa;
+        }
+        .channel-item.active {
+            background: #667eea;
+            color: white;
+        }
+        .online-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            margin-right: 5px;
+        }
+        
+        /* Main Chat */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .message-content {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            max-width: 70%;
+        }
+        .message-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        .message-author {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .message-time {
+            font-size: 12px;
+            color: #999;
+        }
+        .message-text {
+            color: #333;
+        }
+        .message-file {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .message-file a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        /* Input Area */
+        .chat-input {
+            background: white;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+        }
+        .btn-send, .btn-file {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-file {
+            background: #6c757d;
+        }
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h1>💬 Chat Mensajería</h1>
+            
+            <div id="login-form">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="login-username" placeholder="tu_usuario">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-password" placeholder="contraseña">
+                </div>
+                <button class="btn btn-primary" onclick="login()">Iniciar Sesión</button>
+                <div class="toggle-form">
+                    ¿No tienes cuenta? <a href="#" onclick="showRegister(); return false;">Registrarse</a>
+                </div>
+            </div>
+            
+            <div id="register-form" style="display:none;">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="reg-username" placeholder="usuario">
+                </div>
+                <div class="form-group">
+                    <label>Nombre Completo</label>
+                    <input type="text" id="reg-name" placeholder="Tu Nombre">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="reg-password" placeholder="contraseña">
+                </div>
+                <div class="form-group">
+                    <label>Bio (opcional)</label>
+                    <textarea id="reg-bio" rows="3" placeholder="Algo sobre ti..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="register()">Crear Cuenta</button>
+                <div class="toggle-form">
+                    ¿Ya tienes cuenta? <a href="#" onclick="showLogin(); return false;">Iniciar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chat-screen">
+        <div class="chat-header">
+            <h1>💬 Chat</h1>
+            <div class="user-info">
+                <div class="user-avatar" id="current-user-avatar">U</div>
+                <span id="current-user-name">Usuario</span>
+                <button class="btn-logout" onclick="logout()">Salir</button>
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">📢 Canales</div>
+                <div class="sidebar-content" id="channels-list"></div>
+                
+                <div class="sidebar-header">👥 Usuarios Online</div>
+                <div class="sidebar-content" id="users-list"></div>
+            </div>
+            
+            <!-- Main Chat -->
+            <div class="main-chat">
+                <div class="chat-messages" id="messages"></div>
+                
+                <div class="chat-input">
+                    <input type="text" id="message-input" placeholder="Escribe un mensaje..." onkeypress="handleKeyPress(event)">
+                    <input type="file" id="file-input" onchange="handleFileSelect(event)">
+                    <button class="btn-file" onclick="document.getElementById('file-input').click()">📎</button>
+                    <button class="btn-send" onclick="sendMessage()">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let currentUser = null;
+        let currentChannel = 'general';
+        let isPrivateChat = false;
+        let currentChatWith = null;
+        let selectedFile = null;
+
+        function showRegister() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        }
+
+        async function register() {
+            const username = document.getElementById('reg-username').value;
+            const name = document.getElementById('reg-name').value;
+            const password = document.getElementById('reg-password').value;
+            const bio = document.getElementById('reg-bio').value;
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, name, password, bio })
+                });
+                
+                if (res.ok) {
+                    alert('Cuenta creada exitosamente');
+                    showLogin();
+                } else {
+                    alert('Error al crear cuenta');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUser = data.user;
+                    initChat();
+                } else {
+                    alert('Credenciales inválidas');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function initChat() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'flex';
+            document.getElementById('current-user-name').textContent = currentUser.name;
+            document.getElementById('current-user-avatar').textContent = currentUser.name[0].toUpperCase();
+
+            socket = io();
+            
+            socket.emit('user-login', currentUser);
+            
+            socket.on('user-online', (users) => {
+                updateOnlineUsers(users);
+            });
+            
+            socket.on('channel-history', (messages) => {
+                displayMessages(messages);
+            });
+            
+            socket.on('new-message', (message) => {
+                if (!isPrivateChat) {
+                    addMessage(message);
+                }
+            });
+            
+            socket.on('private-message', (message) => {
+                if (isPrivateChat && (message.from === currentChatWith || message.to === currentChatWith)) {
+                    addMessage(message);
+                }
+            });
+
+            loadChannels();
+        }
+
+        async function loadChannels() {
+            const res = await fetch('/api/channels');
+            const channels = await res.json();
+            
+            const channelsList = document.getElementById('channels-list');
+            channelsList.innerHTML = channels.map(ch => `
+                <div class="channel-item ${ch.id === 'general' ? 'active' : ''}" onclick="joinChannel('${ch.id}')">
+                    # ${ch.name}
+                </div>
+            `).join('');
+        }
+
+        function updateOnlineUsers(users) {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = users
+                .filter(u => u.username !== currentUser.username)
+                .map(u => `
+                    <div class="user-item" onclick="startPrivateChat('${u.username}', '${u.name}')">
+                        <span class="online-indicator"></span>${u.name}
+                    </div>
+                `).join('');
+        }
+
+        function joinChannel(channelId) {
+            currentChannel = channelId;
+            isPrivateChat = false;
+            socket.emit('join-channel', channelId);
+            document.querySelectorAll('.channel-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function startPrivateChat(username, name) {
+            isPrivateChat = true;
+            currentChatWith = username;
+            document.getElementById('messages').innerHTML = `<p style="text-align:center;color:#999;">Chat privado con ${name}</p>`;
+        }
+
+        function displayMessages(messages) {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            messages.forEach(msg => addMessage(msg));
+        }
+
+        function addMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            
+            const initial = (message.name || message.from || 'U')[0].toUpperCase();
+            const time = new Date(message.timestamp).toLocaleTimeString();
+            
+            msgDiv.innerHTML = `
+                <div class="message-avatar">${initial}</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${message.name || message.from}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-text">${message.text}</div>
+                    ${message.file ? `<div class="message-file">📎 <a href="${message.file.path}" target="_blank">${message.file.name}</a></div>` : ''}
+                </div>
+            `;
+            
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await res.json();
+            selectedFile = {
+                name: file.name,
+                path: data.path
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            
+            if (!text && !selectedFile) return;
+            
+            if (isPrivateChat) {
+                socket.emit('private-message', {
+                    from: currentUser.username,
+                    to: currentChatWith,
+                    text,
+                    file: selectedFile
+                });
+            } else {
+                socket.emit('channel-message', {
+                    channel: currentChannel,
+                    username: currentUser.username,
+                    name: currentUser.name,
+                    text,
+                    file: selectedFile
+                });
+            }
+            
+            input.value = '';
+            selectedFile = null;
+            document.getElementById('file-input').value = '';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function logout() {
+            if (socket) socket.disconnect();
+            currentUser = null;
+            document.getElementById('chat-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

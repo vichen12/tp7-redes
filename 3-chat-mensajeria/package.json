@@ -1,0 +1,17 @@
+{
+  "name": "chat-mensajeria",
+  "version": "1.0.0",
+  "description": "Sistema de Chat con canales y mensajería privada",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "multer": "^1.4.5-lts.1",
+    "body-parser": "^1.20.2",
+    "fs-extra": "^11.1.1",
+    "morgan": "^1.10.0"
+  }
+}

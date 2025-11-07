@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 15px 30px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .panel {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .panel.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .log-container {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .user-list, .dir-list {
+            list-style: none;
+        }
+        .user-item, .dir-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            display: none;
+        }
+        .status.success {
+            background: #28a745;
+            color: white;
+        }
+        .status.error {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Panel de Administración del Servidor</h1>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('config')">Configuración</button>
+            <button class="tab" onclick="showTab('users')">Usuarios</button>
+            <button class="tab" onclick="showTab('security')">Seguridad</button>
+            <button class="tab" onclick="showTab('logs')">Logs</button>
+        </div>
+
+        <!-- Panel de Configuración -->
+        <div id="config" class="panel active">
+            <h2>Configuración del Servidor</h2>
+            <div class="form-group">
+                <label>Nombre del Servidor</label>
+                <input type="text" id="serverName" placeholder="Mi Servidor Web">
+            </div>
+            <div class="form-group">
+                <label>Puerto</label>
+                <input type="number" id="port" placeholder="8080">
+            </div>
+            <div class="form-group">
+                <label>DocumentRoot</label>
+                <input type="text" id="documentRoot" placeholder="./public">
+            </div>
+            <div class="form-group">
+                <label>Archivo de Log</label>
+                <input type="text" id="logFile" placeholder="./logs/access.log">
+            </div>
+            <button class="btn btn-primary" onclick="saveConfig()">Guardar Configuración</button>
+        </div>
+
+        <!-- Panel de Usuarios -->
+        <div id="users" class="panel">
+            <h2>Gestión de Usuarios</h2>
+            <div class="form-group">
+                <label>Nuevo Usuario</label>
+                <input type="text" id="newUsername" placeholder="nombre de usuario">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="newPassword" placeholder="contraseña">
+            </div>
+            <button class="btn btn-primary" onclick="addUser()">Agregar Usuario</button>
+            
+            <h3 style="margin-top: 30px;">Usuarios Existentes</h3>
+            <ul id="userList" class="user-list"></ul>
+        </div>
+
+        <!-- Panel de Seguridad -->
+        <div id="security" class="panel">
+            <h2>Directorios Protegidos</h2>
+            <div class="form-group">
+                <label>Proteger Directorio</label>
+                <input type="text" id="protectDir" placeholder="/ruta/del/directorio">
+            </div>
+            <button class="btn btn-primary" onclick="protectDirectory()">Proteger</button>
+            
+            <h3 style="margin-top: 30px;">Directorios Protegidos</h3>
+            <ul id="dirList" class="dir-list"></ul>
+        </div>
+
+        <!-- Panel de Logs -->
+        <div id="logs" class="panel">
+            <h2>Registro de Actividad</h2>
+            <button class="btn btn-primary" onclick="loadLogs()">Actualizar Logs</button>
+            <div class="log-container" id="logContainer">
+                Cargando logs...
+            </div>
+        </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        const API_URL = '/api';
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'users') loadUsers();
+            if (tabName === 'security') loadProtectedDirs();
+            if (tabName === 'logs') loadLogs();
+            if (tabName === 'config') loadConfig();
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            setTimeout(() => status.style.display = 'none', 3000);
+        }
+
+        async function loadConfig() {
+            try {
+                const res = await fetch(`${API_URL}/config`);
+                const config = await res.json();
+                document.getElementById('serverName').value = config.serverName || '';
+                document.getElementById('port').value = config.port || 8080;
+                document.getElementById('documentRoot').value = config.documentRoot || './public';
+                document.getElementById('logFile').value = config.logFile || './logs/access.log';
+            } catch (error) {
+                showStatus('Error al cargar configuración', 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const config = {
+                serverName: document.getElementById('serverName').value,
+                port: parseInt(document.getElementById('port').value),
+                documentRoot: document.getElementById('documentRoot').value,
+                logFile: document.getElementById('logFile').value
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const data = await res.json();
+                showStatus('Configuración guardada. Reinicia el servidor para aplicar cambios.', 'success');
+            } catch (error) {
+                showStatus('Error al guardar configuración', 'error');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_URL}/users`);
+                const users = await res.json();
+                const userList = document.getElementById('userList');
+                userList.innerHTML = users.map(user => `
+                    <li class="user-item">
+                        <span>👤 ${user}</span>
+                        ${user !== 'admin' ? `<button class="btn btn-danger" onclick="deleteUser('${user}')">Eliminar</button>` : ''}
+                    </li>
+                `).join('');
+            } catch (error) {
+                showStatus('Error al cargar usuarios', 'error');
+            }
+        }
+
+        async function addUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+
+            if (!username || !password) {
+                showStatus('Completa todos los campos', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                showStatus('Usuario agregado', 'success');
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newPassword').value = '';
+                loadUsers();
+            } catch (error) {
+                showStatus('Error al agregar usuario', 'error');
+            }
+        }
+
+        async function deleteUser(username) {
+            if (!confirm(`¿Eliminar usuario ${username}?`)) return;
+
+            try {
+                await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' });
+                showStatus('Usuario eliminado', 'success');
+                loadUsers();
+            } catch (error) {
+                showStatus('Error al eliminar usuario', 'error');
+            }
+        }
+
+        async function protectDirectory() {
+            const directory = document.getElementById('protectDir').value;
+            if (!directory) {
+                showStatus('Ingresa un directorio', 'error');
+                return;
+            }
+
+            try {
+                await fetch(`${API_URL}/protect-dir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ directory })
+                });
+                showStatus('Directorio protegido', 'success');
+                document.getElementById('protectDir').value = '';
+                loadProtectedDirs();
+            } catch (error) {
+                showStatus('Error al proteger directorio', 'error');
+            }
+        }
+
+        async function loadProtectedDirs() {
+            try {
+                const res = await fetch(`${API_URL}/config`);
+                const config = await res.json();
+                const dirList = document.getElementById('dirList');
+                const dirs = Object.keys(config.protectedDirs || {});
+                
+                if (dirs.length === 0) {
+                    dirList.innerHTML = '<li class="dir-item">No hay directorios protegidos</li>';
+                } else {
+                    dirList.innerHTML = dirs.map(dir => `
+                        <li class="dir-item">
+                            <span>🔒 ${dir}</span>
+                        </li>
+                    `).join('');
+                }
+            } catch (error) {
+                showStatus('Error al cargar directorios', 'error');
+            }
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch(`${API_URL}/logs`);
+                const data = await res.json();
+                const logContainer = document.getElementById('logContainer');
+                logContainer.innerHTML = data.logs.join('\n') || 'No hay logs disponibles';
+            } catch (error) {
+                showStatus('Error al cargar logs', 'error');
+            }
+        }
+
+        // Cargar configuración al iniciar
+        loadConfig();
+    </script>
+</body>
+</html>

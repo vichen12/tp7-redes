@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente de Correo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📧 Cliente de Correo Electrónico</h1>
+        </header>
+
+        <!-- Panel de Configuración -->
+        <div id="config-panel" class="panel">
+            <h2>Configuración de Cuenta</h2>
+            <div class="config-section">
+                <h3>SMTP (Envío)</h3>
+                <input type="text" id="smtp-host" placeholder="smtp.gmail.com">
+                <input type="number" id="smtp-port" placeholder="587">
+                <input type="text" id="smtp-user" placeholder="tu@email.com">
+                <input type="password" id="smtp-pass" placeholder="Contraseña">
+                <label><input type="checkbox" id="smtp-secure"> SSL/TLS</label>
+            </div>
+
+            <div class="config-section">
+                <h3>IMAP (Recepción)</h3>
+                <input type="text" id="imap-host" placeholder="imap.gmail.com">
+                <input type="number" id="imap-port" placeholder="993">
+                <input type="text" id="imap-user" placeholder="tu@email.com">
+                <input type="password" id="imap-pass" placeholder="Contraseña">
+                <label><input type="checkbox" id="imap-tls" checked> TLS</label>
+            </div>
+
+            <div class="config-section">
+                <h3>POP3 (Alternativo)</h3>
+                <input type="text" id="pop3-host" placeholder="pop.gmail.com">
+                <input type="number" id="pop3-port" placeholder="995">
+                <input type="text" id="pop3-user" placeholder="tu@email.com">
+                <input type="password" id="pop3-pass" placeholder="Contraseña">
+                <label><input type="checkbox" id="pop3-tls" checked> TLS</label>
+            </div>
+
+            <button onclick="saveConfig()" class="btn-primary">Guardar Configuración</button>
+        </div>
+
+        <!-- Panel Principal -->
+        <div id="main-panel" class="panel" style="display:none;">
+            <div class="toolbar">
+                <button onclick="showCompose()" class="btn-primary">✉️ Nuevo Correo</button>
+                <button onclick="fetchEmails('imap')" class="btn-secondary">📥 Recibir (IMAP)</button>
+                <button onclick="fetchEmails('pop3')" class="btn-secondary">📥 Recibir (POP3)</button>
+                <button onclick="showSearch()" class="btn-secondary">🔍 Buscar</button>
+                <button onclick="showConfig()" class="btn-secondary">⚙️ Configurar</button>
+            </div>
+
+            <!-- Panel de Búsqueda -->
+            <div id="search-panel" class="search-panel" style="display:none;">
+                <h3>Buscar Correos</h3>
+                <input type="text" id="search-from" placeholder="De (remitente)">
+                <input type="text" id="search-to" placeholder="Para (destinatario)">
+                <input type="text" id="search-subject" placeholder="Asunto">
+                <input type="text" id="search-body" placeholder="Contenido">
+                <button onclick="searchEmails()" class="btn-primary">Buscar</button>
+                <button onclick="hideSearch()" class="btn-secondary">Cancelar</button>
+            </div>
+
+            <!-- Panel de Composición -->
+            <div id="compose-panel" class="compose-panel" style="display:none;">
+                <h3>Nuevo Correo</h3>
+                <input type="text" id="to" placeholder="Para:">
+                <input type="text" id="cc" placeholder="CC:">
+                <input type="text" id="bcc" placeholder="CCO:">
+                <input type="text" id="subject" placeholder="Asunto:">
+                <textarea id="body" placeholder="Escribe tu mensaje aquí..." rows="10"></textarea>
+                <div class="compose-actions">
+                    <button onclick="sendEmail()" class="btn-primary">Enviar</button>
+                    <button onclick="hideCompose()" class="btn-secondary">Cancelar</button>
+                </div>
+            </div>
+
+            <!-- Lista de Correos -->
+            <div id="email-list" class="email-list">
+                <div class="empty-state">No hay correos para mostrar. Haz clic en "Recibir" para cargar tus correos.</div>
+            </div>
+
+            <!-- Visor de Correo -->
+            <div id="email-viewer" class="email-viewer" style="display:none;">
+                <div class="email-header">
+                    <button onclick="hideViewer()" class="btn-close">✕</button>
+                    <button onclick="replyEmail()" class="btn-secondary">↩️ Responder</button>
+                    <button onclick="forwardEmail()" class="btn-secondary">➡️ Reenviar</button>
+                    <button onclick="deleteEmail()" class="btn-danger">🗑️ Eliminar</button>
+                </div>
+                <div id="email-content"></div>
+            </div>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

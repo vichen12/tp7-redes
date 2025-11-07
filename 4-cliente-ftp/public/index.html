@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente FTP</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 { color: #667eea; }
+        .connection-panel, .ftp-panel {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .ftp-panel { display: none; }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .current-path {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        .file-list {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .file-item {
+            display: grid;
+            grid-template-columns: 40px 3fr 1fr 1fr 2fr;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .file-item:hover {
+            background: #f8f9fa;
+        }
+        .file-icon {
+            font-size: 24px;
+        }
+        .file-name {
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+        }
+        .file-name:hover {
+            color: #667eea;
+        }
+        .file-size {
+            color: #666;
+            font-size: 14px;
+        }
+        .file-date {
+            color: #999;
+            font-size: 13px;
+        }
+        .file-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            display: none;
+        }
+        .status.success {
+            background: #28a745;
+            color: white;
+        }
+        .status.error {
+            background: #dc3545;
+            color: white;
+        }
+        #file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📁 Cliente FTP</h1>
+        </header>
+
+        <!-- Panel de Conexión -->
+        <div class="connection-panel">
+            <h2>Conectar a Servidor FTP</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Host</label>
+                    <input type="text" id="host" placeholder="ftp.ejemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Puerto</label>
+                    <input type="number" id="port" value="21">
+                </div>
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="user" placeholder="usuario">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" placeholder="contraseña">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="connect()">Conectar</button>
+        </div>
+
+        <!-- Panel FTP -->
+        <div class="ftp-panel">
+            <div class="toolbar">
+                <button class="btn btn-success" onclick="document.getElementById('file-input').click()">⬆️ Subir Archivo</button>
+                <button class="btn btn-primary" onclick="showMkdirModal()">📁 Crear Carpeta</button>
+                <button class="btn btn-secondary" onclick="refreshList()">🔄 Actualizar</button>
+                <button class="btn btn-danger" onclick="disconnect()">❌ Desconectar</button>
+            </div>
+
+            <div class="current-path">
+                <strong>Directorio actual:</strong> <span id="current-path">/</span>
+            </div>
+
+            <div class="file-list" id="file-list">
+                <div style="padding: 50px; text-align: center; color: #999;">
+                    Cargando archivos...
+                </div>
+            </div>
+
+            <input type="file" id="file-input" onchange="uploadFile(event)">
+        </div>
+    </div>
+
+    <!-- Modal para crear directorio -->
+    <div id="mkdir-modal" class="modal">
+        <div class="modal-content">
+            <h3>Crear Nuevo Directorio</h3>
+            <div class="form-group">
+                <label>Nombre del directorio</label>
+                <input type="text" id="new-dir-name" placeholder="mi_carpeta">
+            </div>
+            <button class="btn btn-primary" onclick="createDirectory()">Crear</button>
+            <button class="btn btn-secondary" onclick="closeMkdirModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal para renombrar -->
+    <div id="rename-modal" class="modal">
+        <div class="modal-content">
+            <h3>Renombrar</h3>
+            <div class="form-group">
+                <label>Nuevo nombre</label>
+                <input type="text" id="rename-input">
+            </div>
+            <button class="btn btn-primary" onclick="confirmRename()">Renombrar</button>
+            <button class="btn btn-secondary" onclick="closeRenameModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const sessionId = 'session-' + Date.now();
+        let currentPath = '/';
+        let renameTarget = null;
+
+        function showStatus(message, type = 'success') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            setTimeout(() => status.style.display = 'none', 3000);
+        }
+
+        async function connect() {
+            const host = document.getElementById('host').value;
+            const port = document.getElementById('port').value;
+            const user = document.getElementById('user').value;
+            const password = document.getElementById('password').value;
+
+            if (!host || !user || !password) {
+                showStatus('Completa todos los campos', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/connect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, host, port, user, password })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Conectado exitosamente', 'success');
+                    document.querySelector('.connection-panel').style.display = 'none';
+                    document.querySelector('.ftp-panel').style.display = 'block';
+                    currentPath = data.currentDir;
+                    listFiles();
+                } else {
+                    showStatus('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error de conexión: ' + error.message, 'error');
+            }
+        }
+
+        async function listFiles(path = null) {
+            try {
+                const res = await fetch(`${API_URL}/list`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, path })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    currentPath = data.currentDir;
+                    document.getElementById('current-path').textContent = currentPath;
+                    displayFiles(data.files);
+                }
+            } catch (error) {
+                showStatus('Error al listar archivos: ' + error.message, 'error');
+            }
+        }
+
+        function displayFiles(files) {
+            const fileList = document.getElementById('file-list');
+            
+            if (files.length === 0) {
+                fileList.innerHTML = '<div style="padding: 50px; text-align: center; color: #999;">Directorio vacío</div>';
+                return;
+            }
+
+            fileList.innerHTML = files.map(file => {
+                const icon = file.type === 'directory' ? '📁' : '📄';
+                const size = file.type === 'directory' ? '-' : formatBytes(file.size);
+                const date = new Date(file.date).toLocaleString();
+                
+                return `
+                    <div class="file-item">
+                        <div class="file-icon">${icon}</div>
+                        <div class="file-name" onclick="handleFileClick('${file.name}', '${file.type}')">${file.name}</div>
+                        <div class="file-size">${size}</div>
+                        <div class="file-date">${date}</div>
+                        <div class="file-actions">
+                            ${file.type === 'file' ? `<button class="btn btn-success btn-sm" onclick="downloadFile('${file.name}')">⬇️</button>` : ''}
+                            <button class="btn btn-secondary btn-sm" onclick="showRenameModal('${file.name}')">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.name}', '${file.type}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleFileClick(name, type) {
+            if (type === 'directory') {
+                const newPath = currentPath === '/' ? '/' + name : currentPath + '/' + name;
+                listFiles(newPath);
+            }
+        }
+
+        async function uploadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('sessionId', sessionId);
+            formData.append('remotePath', file.name);
+
+            try {
+                const res = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Archivo subido exitosamente', 'success');
+                    listFiles();
+                } else {
+                    showStatus('Error: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error al subir: ' + error.message, 'error');
+            }
+
+            event.target.value = '';
+        }
+
+        async function downloadFile(filename) {
+            try {
+                const remotePath = currentPath === '/' ? '/' + filename : currentPath + '/' + filename;
+                
+                const res = await fetch(`${API_URL}/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, remotePath, filename })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Descargando archivo...', 'success');
+                    window.open(data.downloadUrl, '_blank');
+                }
+            } catch (error) {
+                showStatus('Error al descargar: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteFile(name, type) {
+            if (!confirm(`¿Eliminar ${name}?`)) return;
+
+            try {
+                const path = currentPath === '/' ? '/' + name : currentPath + '/' + name;
+                
+                const res = await fetch(`${API_URL}/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, path, type })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Eliminado exitosamente', 'success');
+                    listFiles();
+                }
+            } catch (error) {
+                showStatus('Error al eliminar: ' + error.message, 'error');
+            }
+        }
+
+        function showMkdirModal() {
+            document.getElementById('mkdir-modal').style.display = 'flex';
+        }
+
+        function closeMkdirModal() {
+            document.getElementById('mkdir-modal').style.display = 'none';
+            document.getElementById('new-dir-name').value = '';
+        }
+
+        async function createDirectory() {
+            const dirName = document.getElementById('new-dir-name').value;
+            if (!dirName) return;
+
+            try {
+                const path = currentPath === '/' ? '/' + dirName : currentPath + '/' + dirName;
+                
+                const res = await fetch(`${API_URL}/mkdir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, path })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Directorio creado', 'success');
+                    closeMkdirModal();
+                    listFiles();
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        function showRenameModal(filename) {
+            renameTarget = filename;
+            document.getElementById('rename-input').value = filename;
+            document.getElementById('rename-modal').style.display = 'flex';
+        }
+
+        function closeRenameModal() {
+            document.getElementById('rename-modal').style.display = 'none';
+            renameTarget = null;
+        }
+
+        async function confirmRename() {
+            const newName = document.getElementById('rename-input').value;
+            if (!newName || !renameTarget) return;
+
+            try {
+                const oldPath = currentPath === '/' ? '/' + renameTarget : currentPath + '/' + renameTarget;
+                const newPath = currentPath === '/' ? '/' + newName : currentPath + '/' + newName;
+                
+                const res = await fetch(`${API_URL}/rename`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, oldPath, newPath })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showStatus('Renombrado exitosamente', 'success');
+                    closeRenameModal();
+                    listFiles();
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        function refreshList() {
+            listFiles(currentPath);
+        }
+
+        async function disconnect() {
+            await fetch(`${API_URL}/disconnect`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId })
+            });
+            
+            location.reload();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html> 

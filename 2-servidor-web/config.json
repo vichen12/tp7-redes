@@ -1,0 +1,11 @@
+{
+  "port": 8080,
+  "documentRoot": "./public",
+  "serverName": "Mi Servidor Web",
+  "enableLogging": true,
+  "logFile": "./logs/access.log",
+  "protectedDirs": {},
+  "allowedDirectories": [
+    "public"
+  ]
+}
