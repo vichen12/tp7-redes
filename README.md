@@ -76,8 +76,10 @@ npm start
 - 🗑️ Eliminar
 - 🔍 Buscar por: remitente, destinatario, asunto, contenido
 
-**Resultado:**
+
 ```
+**Resultado:**
+
 ✅ Correo enviado exitosamente
 📧 Bandeja: 15 mensajes recibidos
 🔍 Búsqueda: 3 correos encontrados
@@ -95,8 +97,9 @@ npm start
 - ⚙️ Panel de configuración web
 - 👥 Protección con usuarios
 
-**Resultado del log:**
+
 ```
+**Resultado del log:**
 ::1 - - [06/Nov/2024:14:23:45] "GET /index.html" 200
 ::1 - admin [06/Nov/2024:14:24:05] "GET /admin" 200
 ::1 - - [06/Nov/2024:14:25:33] "GET /../config.json" 403
@@ -122,8 +125,10 @@ npm start
 - 💾 Guardar conversaciones
 - 📝 Logging de mensajes
 
-**Resultado:**
+
 ```
+
+**Resultado:**
 ✅ Usuario conectado: Juan
 💬 Mensaje enviado en #general
 📎 Archivo compartido: documento.pdf
@@ -148,8 +153,9 @@ npm start
 - Carpetas: `MKD`, `RMD`
 - Otros: `RNFR`, `RNTO`, `USER`, `PASS`
 
-**Resultado:**
 ```
+
+**Resultado:**
 ✅ Conectado a ftp.ejemplo.com
 📁 Directorio actual: /documentos
 📥 Descargando: archivo.pdf (2.5 MB)
@@ -170,4 +176,4 @@ RequisitoEstadoCorreo: SMTP, IMAP, POP3✅Correo: Reenviar, responder, eliminar�
 🔧 Solución Rápida de Problemas
 ProblemaSolución"npm no reconocido"Reinstalar Node.js"Puerto en uso"Cerrar otras aplicacionesGmail no funcionaUsar contraseña de aplicación de GoogleNo conectaVerificar URL y que servidor esté corriendo
 
-¡Proyecto completo y funcional! 🎓
+
